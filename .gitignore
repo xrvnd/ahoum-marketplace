@@ -1,0 +1,26 @@
+# Environment files
+.env
+*.env
+.env.local
+.env.*.local
+
+# Virtual environments
+.venv/
+venv/
+node_modules/
+
+# Python
+__pycache__/
+*.pyc
+
+# Django
+db.sqlite3
+*.log
+
+# Next.js
+.next/
+out/
+
+# IDE
+.vscode/
+.idea/
