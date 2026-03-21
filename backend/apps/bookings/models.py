@@ -13,6 +13,7 @@ class Booking(models.Model):
     session    = models.ForeignKey(Session, on_delete=models.CASCADE, related_name='bookings')
     status     = models.CharField(max_length=10, choices=STATUS_CHOICES, default='confirmed')
     booked_at  = models.DateTimeField(auto_now_add=True)
+    
 
     class Meta:
         # One user cannot book the same session twice
