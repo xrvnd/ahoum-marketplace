@@ -1,0 +1,71 @@
+services:
+
+  # PostgreSQL Database 
+  db:
+    image: postgres:16-alpine
+    container_name: ahoum_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB:       ${DB_NAME}
+      POSTGRES_USER:     ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      interval: 10s
+      timeout:  5s
+      retries:  5
+
+  # Django Backend
+  backend:
+    build:
+      context:    ./backend
+      dockerfile: Dockerfile
+    container_name: ahoum_backend
+    restart: unless-stopped
+    environment:
+      SECRET_KEY:    ${SECRET_KEY}
+      DEBUG:         ${DEBUG}
+      DATABASE_URL:  postgresql://${DB_USER}:${DB_PASSWORD}@db:5432/${DB_NAME}
+      ALLOWED_HOSTS: ${ALLOWED_HOSTS}
+    volumes:
+      - static_volume:/app/staticfiles
+    depends_on:
+      db:
+        condition: service_healthy
+    command: >
+      sh -c "python manage.py migrate --noinput &&
+             python manage.py collectstatic --noinput &&
+             gunicorn config.wsgi:application --bind 0.0.0.0:8000 --workers 3"
+
+  # Next.js Frontend 
+  frontend:
+    build:
+      context:    ./frontend
+      dockerfile: Dockerfile
+    container_name: ahoum_frontend
+    restart: unless-stopped
+    environment:
+      NEXT_PUBLIC_API_URL:          ${NEXT_PUBLIC_API_URL}
+      NEXT_PUBLIC_GOOGLE_AUTH_URL:  ${NEXT_PUBLIC_GOOGLE_AUTH_URL}
+    depends_on:
+      - backend
+
+  # Nginx Reverse Proxy
+  nginx:
+    image: nginx:alpine
+    container_name: ahoum_nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf
+      - static_volume:/app/staticfiles
+    depends_on:
+      - backend
+      - frontend
+
+volumes:
+  postgres_data:
+  static_volume:

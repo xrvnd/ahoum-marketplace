@@ -1,18 +1,15 @@
 from pathlib import Path
 from datetime import timedelta
 from decouple import config
+import dj_database_url
 
-# ─────────────────────────────────────────────────────────────────────────────
+
 # PATHS
-# ─────────────────────────────────────────────────────────────────────────────
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 
-# ─────────────────────────────────────────────────────────────────────────────
 # SECURITY
-# ─────────────────────────────────────────────────────────────────────────────
 
-# FIXED: Don't hardcode the secret key — pull from .env
 SECRET_KEY = config('SECRET_KEY')
 
 DEBUG = config('DEBUG', default=True, cast=bool)
@@ -20,11 +17,8 @@ DEBUG = config('DEBUG', default=True, cast=bool)
 ALLOWED_HOSTS = ['*']
 
 
-# ─────────────────────────────────────────────────────────────────────────────
 # INSTALLED APPS
-# ─────────────────────────────────────────────────────────────────────────────
 
-# FIXED BUG 1: Added missing comma after 'django.contrib.sites'
 INSTALLED_APPS = [
     # Django core
     'django.contrib.admin',
@@ -50,9 +44,7 @@ INSTALLED_APPS = [
 ]
 
 
-# ─────────────────────────────────────────────────────────────────────────────
 # MIDDLEWARE
-# ─────────────────────────────────────────────────────────────────────────────
 
 # CorsMiddleware 
 MIDDLEWARE = [
@@ -68,16 +60,12 @@ MIDDLEWARE = [
 ]
 
 
-# ─────────────────────────────────────────────────────────────────────────────
 # URLS & WSGI
-# ─────────────────────────────────────────────────────────────────────────────
 ROOT_URLCONF = 'config.urls'
 WSGI_APPLICATION = 'config.wsgi.application'
 
 
-# ─────────────────────────────────────────────────────────────────────────────
 # TEMPLATES
-# ─────────────────────────────────────────────────────────────────────────────
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
@@ -94,35 +82,39 @@ TEMPLATES = [
 ]
 
 
-# ─────────────────────────────────────────────────────────────────────────────
 # DATABASE
-# ─────────────────────────────────────────────────────────────────────────────
 
-# Keeping SQLite for local dev right now.
-# We may switch this to PostgreSQL later 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+DATABASE_URL = config('DATABASE_URL', default=None)
+
+if DATABASE_URL:
+    # Docker / production — use DATABASE_URL
+    DATABASES = {
+        'default': dj_database_url.parse(str(DATABASE_URL), conn_max_age=600)
     }
-}
+else:
+    # Local dev fallback — SQLite
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
 
 
-# ─────────────────────────────────────────────────────────────────────────────
 # AUTHENTICATION
-# ─────────────────────────────────────────────────────────────────────────────
+
 AUTHENTICATION_BACKENDS = [
     'django.contrib.auth.backends.ModelBackend',
     'allauth.account.auth_backends.AuthenticationBackend',
 ]
 
 
-# ─────────────────────────────────────────────────────────────────────────────
+
 # ALLAUTH CONFIGURATION
-# ─────────────────────────────────────────────────────────────────────────────
 
 
-# ── ALLAUTH (allauth 65.x format) ─────────────────────────────────────────────
+
+# ALLAUTH (allauth 65.x format)
 SITE_ID = 1
 LOGIN_REDIRECT_URL = '/api/auth/callback/'
 
@@ -143,9 +135,9 @@ SOCIALACCOUNT_PROVIDERS = {
     }
 }
 
-# ─────────────────────────────────────────────────────────────────────────────
+
 # DJANGO REST FRAMEWORK
-# ─────────────────────────────────────────────────────────────────────────────
+
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
@@ -158,18 +150,16 @@ REST_FRAMEWORK = {
 }
 
 
-# ─────────────────────────────────────────────────────────────────────────────
+
 # SIMPLE JWT
-# ─────────────────────────────────────────────────────────────────────────────
+
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME':  timedelta(hours=24),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
 }
 
 
-# ─────────────────────────────────────────────────────────────────────────────
 # CORS
-# ─────────────────────────────────────────────────────────────────────────────
 CORS_ALLOWED_ORIGINS = [
     'http://localhost:3000',   # Next.js dev server
 ]
@@ -177,9 +167,8 @@ CORS_ALLOWED_ORIGINS = [
 CORS_ALLOW_CREDENTIALS = True
 
 
-# ─────────────────────────────────────────────────────────────────────────────
+
 # PASSWORD VALIDATION
-# ─────────────────────────────────────────────────────────────────────────────
 AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
     {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator'},
@@ -188,19 +177,20 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 
-# ─────────────────────────────────────────────────────────────────────────────
 # INTERNATIONALISATION
-# ─────────────────────────────────────────────────────────────────────────────
+
 LANGUAGE_CODE = 'en-us'
 TIME_ZONE     = 'UTC'
 USE_I18N      = True
 USE_TZ        = True
 
 
-# ─────────────────────────────────────────────────────────────────────────────
+
 # STATIC FILES
-# ─────────────────────────────────────────────────────────────────────────────
-STATIC_URL = '/static/'
+
+STATIC_URL  = '/static/'
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+
 
 # Tells Django to use BigAutoField for auto-generated primary keys
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
