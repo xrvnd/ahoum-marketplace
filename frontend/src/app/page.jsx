@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import api from '@/lib/api';
-import SessionCard from '@/components/SessionCard';
+import SessionCard, { SessionBentoGrid } from '@/components/SessionCard';
 import { useAuth } from '@/context/AuthContext';
 
 export default function HomePage() {
@@ -97,11 +97,7 @@ export default function HomePage() {
               </button>
             )}
           </div>
-          <div className="sessions-grid">
-            {sessions.map((session) => (
-              <SessionCard key={session.id} session={session} />
-            ))}
-          </div>
+          <SessionBentoGrid sessions={sessions} />
         </>
       )}
     </div>
